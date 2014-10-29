@@ -5,9 +5,9 @@ import java.util.Random;
 
 
 public class spielfeld {
-	
-	int[][] brettHeuristik = new int[8][8];
-	boolean[][] brettDamen = new boolean[8][8];
+	static int N = 8;
+	int[][] brettHeuristik = new int[N][N];
+	boolean[][] brettDamen = new boolean[N][N];
 	public int globalMaxima = 100;
 	public int localMaxima = 1001;
 	List<String> heuristikMinimum = new ArrayList<String>();
@@ -18,8 +18,8 @@ public class spielfeld {
 	
 	public void calcGlobalMax(){
 		int count = 0;
-		for(int i = 0; i < 8; i++){
-			for(int x = 0; x < 8; x++){
+		for(int i = 0; i < N; i++){
+			for(int x = 0; x < N; x++){
 				if(brettDamen[i][x])
 					count += brettHeuristik[i][x];
 			}
@@ -28,6 +28,9 @@ public class spielfeld {
 	}
 	
 	public void searchHeuristikMin(){
+		if(heuristikMinimum.size()==0)
+			return;
+		
 		Random random = new Random();
 		int randomKey = heuristikMinimum.size();
 		String value = heuristikMinimum.get(random.nextInt(randomKey));
@@ -38,7 +41,7 @@ public class spielfeld {
 	}
 	
 	private void makeStep(int reihe, int spalte) {
-		for(int i = 0; i < 8; i++){
+		for(int i = 0; i < N; i++){
 			if(brettDamen[reihe][i]){
 				brettDamen[reihe][i] = false;
 				brettHeuristik[reihe][i] = checkPosition(reihe, i);
@@ -53,21 +56,26 @@ public class spielfeld {
 			Arrays.fill(row, Boolean.FALSE);
 		Random randomColumn = new Random();
 		int randomValue = 0;
-		for(int i = 0; i < 8; i++){
-			randomValue = randomColumn.nextInt(7);
+		for(int i = 0; i < N; i++){
+			randomValue = randomColumn.nextInt(N-1);
 			brettDamen[i][randomValue] = true;
 		}
 	}
 	
 	public void setHeuristik(){
 		int value = 0;
-		for(int i = 0; i < 8; i++){
-			for(int x = 0; x < 8; x++){
+		int valueDame = 100;
+		for(int i = 0; i < N; i++){
+			for(int x = 0; x < N; x++){
 				value = checkPosition(i,x);
 				brettHeuristik[i][x] = value;
-				if(!brettDamen[i][x] && value == localMaxima){
+				
+				if(brettDamen[i][x])
+					valueDame = value;
+				
+				if(!brettDamen[i][x] && valueDame >= value && value == localMaxima){
 					heuristikMinimum.add(i+","+ x);
-				}else if(!brettDamen[i][x] && value < localMaxima){
+				}else if(!brettDamen[i][x] && valueDame >= value && value < localMaxima){
 					localMaxima = value;
 					heuristikMinimum.clear();
 					heuristikMinimum.add(i+","+x);
@@ -91,8 +99,8 @@ public class spielfeld {
 		int reiheRunter = reihe;
 		int count = 0;
 		
-		for(int nextSpalte = spalte+1; nextSpalte < 8; nextSpalte++){
-			if(reiheHoch < 7 && brettDamen[++reiheHoch][nextSpalte])
+		for(int nextSpalte = spalte+1; nextSpalte < N; nextSpalte++){
+			if(reiheHoch < N-1 && brettDamen[++reiheHoch][nextSpalte])
 				count++;
 			if(reiheRunter > 0 && brettDamen[--reiheRunter][nextSpalte])
 				count++;
@@ -102,7 +110,7 @@ public class spielfeld {
 		reiheRunter = reihe;
 		
 		for(int nextSpalte = spalte-1; nextSpalte >= 0; nextSpalte--){
-			if(reiheHoch < 7 && brettDamen[++reiheHoch][nextSpalte])
+			if(reiheHoch < N-1 && brettDamen[++reiheHoch][nextSpalte])
 				count++;
 			if(reiheRunter > 0 && brettDamen[--reiheRunter][nextSpalte])
 				count++;
@@ -113,7 +121,7 @@ public class spielfeld {
 
 	private int countVertical(int reihe, int spalte) {
 		int count = 0;
-		for(int i = 0; i < 8; i++){
+		for(int i = 0; i < N; i++){
 			//Pruefen ob das feld eine Dame enthaelt und nicht das eigene Feld ist
 			if(i != reihe && brettDamen[i][spalte])
 				count++;
@@ -123,7 +131,7 @@ public class spielfeld {
 
 	private int countHorizontal(int reihe, int spalte) {
 		int count = 0;
-		for(int i = 0; i < 8; i++){
+		for(int i = 0; i < N; i++){
 			//Pruefen ob das feld eine Dame enthaelt und nicht das eigene Feld ist
 			if(i != spalte && brettDamen[reihe][i])
 				count++;
@@ -131,31 +139,41 @@ public class spielfeld {
 		return count;
 	}
 
-	public void printBrett(boolean[][] brett){
-		System.out.println("---------------------------------");
-		for(int i = 0; i < 8; i++){
+	public void printBrett(boolean[][] brettDa, int[][] brettHeu){
+//		System.out.println("---------------------------------           ---------------------------------");
+		
+		trennstriche();
+		
+		for(int i = 0; i < N; i++){
 			System.out.print("|");
-			for(int x = 0; x < 8; x++){
-				if(brett[i][x])
+			for(int x = 0; x < N; x++){
+				if(brettDa[i][x])
 					System.out.print(" D |");
 				else
 					System.out.print("   |");
 			}
+			
+			System.out.print("           |");
+			
+			for(int x = 0; x < N; x++){
+				System.out.print(" " + brettHeu[i][x] + " |");
+			}
 			System.out.println();
-			System.out.println("---------------------------------");
+			trennstriche();
 		}
 	}
 	
-	public void printBrettHeuristik(int[][] brett){
-		System.out.println("---------------------------------");
-		for(int i = 0; i < 8; i++){
-			System.out.print("|");
-			for(int x = 0; x < 8; x++){
-				System.out.print(" " + brett[i][x] + " |");
-			}
-			System.out.println();
-			System.out.println("---------------------------------");
+	public void trennstriche(){
+		for(int e = 0; e < 4*N+1; e++){
+			System.out.print("-");
 		}
+		
+		System.out.print("           ");
+		
+		for(int e = 0; e < 4*N+1; e++){
+			System.out.print("-");
+		}
+		System.out.println();
 	}
 	
 }
